@@ -12,3 +12,6 @@
 
 ### Aturan Keamanan Dasar
 <img src="images/5.png" width="100%">
+
+### Catat Status RSVP Peserta
+<img src="images/6.png" width="100%">
