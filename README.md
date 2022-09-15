@@ -6,3 +6,6 @@
 ### Tulis Pesan ke Cloud Firestore
 <img src="images/2.png" width="100%">
 <img src="images/3.png" width="100%">
+
+### Baca Pesan
+<img src="images/4.png" width="100%">
