@@ -9,3 +9,6 @@
 
 ### Baca Pesan
 <img src="images/4.png" width="100%">
+
+### Aturan Keamanan Dasar
+<img src="images/5.png" width="100%">
