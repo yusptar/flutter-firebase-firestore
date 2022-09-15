@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-import 'package:firebase_auth/firebase_auth.dart'; // new
-import 'package:firebase_core/firebase_core.dart'; // new
-import 'package:provider/provider.dart'; // new
-import 'firebase_options.dart'; // new
-import 'src/authentication.dart'; // new
+import 'dart:async'; // new bagian 2
+import 'package:cloud_firestore/cloud_firestore.dart'; // new bagian 2
+import 'package:firebase_auth/firebase_auth.dart'; // new bagian 1
+import 'package:firebase_core/firebase_core.dart'; // new bagian 1
+import 'package:provider/provider.dart'; // new bagian 1
+import 'firebase_options.dart'; // new bagian 1
+import 'src/authentication.dart'; // new bagian 1
 
 import 'src/widgets.dart';
 
@@ -80,6 +82,20 @@ class HomePage extends StatelessWidget {
           const Paragraph(
             'Join us for a day full of Firebase Workshops and Pizza!',
           ),
+          Consumer<ApplicationState>(
+            builder: (context, appState, _) => Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (appState.loginState == ApplicationLoginState.loggedIn) ...[
+                  const Header('Discussion'),
+                  GuestBook(
+                    addMessage: (message) =>
+                        appState.addMessageToGuestBook(message),
+                  ),
+                ],
+              ],
+            ),
+          ),
         ],
       ),
     );
@@ -89,6 +105,21 @@ class HomePage extends StatelessWidget {
 class ApplicationState extends ChangeNotifier {
   ApplicationState() {
     init();
+  }
+
+  Future<DocumentReference> addMessageToGuestBook(String message) {
+    if (_loginState != ApplicationLoginState.loggedIn) {
+      throw Exception('Must be logged in');
+    }
+
+    return FirebaseFirestore.instance
+        .collection('guestbook')
+        .add(<String, dynamic>{
+      'text': message,
+      'timestamp': DateTime.now().millisecondsSinceEpoch,
+      'name': FirebaseAuth.instance.currentUser!.displayName,
+      'userId': FirebaseAuth.instance.currentUser!.uid,
+    });
   }
 
   Future<void> init() async {
@@ -172,5 +203,62 @@ class ApplicationState extends ChangeNotifier {
 
   void signOut() {
     FirebaseAuth.instance.signOut();
+  }
+}
+
+class GuestBook extends StatefulWidget {
+  const GuestBook({required this.addMessage});
+  final FutureOr<void> Function(String message) addMessage;
+
+  @override
+  _GuestBookState createState() => _GuestBookState();
+}
+
+class _GuestBookState extends State<GuestBook> {
+  final _formKey = GlobalKey<FormState>(debugLabel: '_GuestBookState');
+  final _controller = TextEditingController();
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.all(8.0),
+      child: Form(
+        key: _formKey,
+        child: Row(
+          children: [
+            Expanded(
+              child: TextFormField(
+                controller: _controller,
+                decoration: const InputDecoration(
+                  hintText: 'Leave a message',
+                ),
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Enter your message to continue';
+                  }
+                  return null;
+                },
+              ),
+            ),
+            const SizedBox(width: 8),
+            StyledButton(
+              onPressed: () async {
+                if (_formKey.currentState!.validate()) {
+                  await widget.addMessage(_controller.text);
+                  _controller.clear();
+                }
+              },
+              child: Row(
+                children: const [
+                  Icon(Icons.send),
+                  SizedBox(width: 4),
+                  Text('SEND'),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
